@@ -1,0 +1,29 @@
+# 依存関係（重いので除外）
+node_modules/
+app/node_modules/
+infra-cdk/node_modules/
+
+# ビルド結果
+dist/
+app/dist/
+
+# CDKの自動生成ファイル
+cdk.out/
+
+# 環境変数など（秘密情報）
+.env
+
+# Mac特有の隠しファイル
+.DS_Store
+
+# Terraformの巨大な実行ファイル類を無視
+.terraform/
+*.tfstate
+*.tfstate.backup
+.terraform.lock.hcl
+
+# Node.jsの依存関係も一応
+node_modules/
+
+# 送信待ちのリストを一旦リセットします（ファイル自体は消えません）
+git rm -r --cached .

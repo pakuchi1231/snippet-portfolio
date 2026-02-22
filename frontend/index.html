@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Snippet Share ポートフォリオ</title>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9; }
+    h1 { color: #333; }
+    .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    input, textarea { width: 100%; margin-bottom: 10px; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+    button { background-color: #007bff; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; }
+    button:hover { background-color: #0056b3; }
+    .snippet-item { background: #eee; padding: 10px; margin-bottom: 10px; border-radius: 4px; }
+    pre { background: #222; color: #0f0; padding: 10px; overflow-x: auto; border-radius: 4px; }
+  </style>
+</head>
+<body>
+
+  <h1>📝 Snippet Share API</h1>
+  
+  <div class="card">
+    <h3>新しいコードを保存する</h3>
+    <form id="snippet-form">
+      <input type="text" id="title" placeholder="タイトル (例: はじめてのPython)" required>
+      <textarea id="code" rows="5" placeholder="コードの中身を書いてください..." required></textarea>
+      <button type="submit">AWSに保存！</button>
+    </form>
+    <p id="message" style="color: green; font-weight: bold;"></p>
+  </div>
+
+  <div class="card">
+    <h3>保存されたコード一覧</h3>
+    <button onclick="loadSnippets()" style="background-color: #28a745; margin-bottom: 10px;">更新する</button>
+    <div id="snippet-list">
+      </div>
+  </div>
+
+  <script>
+    // ★★★ ここをあなたのURLに書き換えてください！ ★★★
+    const API_URL = "https://kj77nq93g5.execute-api.ap-northeast-1.amazonaws.com/prod/snippets";
+
+    // データを保存する処理
+    document.getElementById('snippet-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const title = document.getElementById('title').value;
+      const code = document.getElementById('code').value;
+
+      document.getElementById('message').innerText = "保存中...";
+
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, code, language: "text" })
+        });
+
+        if(response.ok) {
+          document.getElementById('message').innerText = "✅ 保存成功！";
+          document.getElementById('snippet-form').reset();
+          loadSnippets(); // 保存したら自動で一覧を更新
+        } else {
+          document.getElementById('message').innerText = "❌ エラーが発生しました";
+        }
+      } catch (error) {
+        document.getElementById('message').innerText = "❌ ネットワークエラーです";
+      }
+    });
+
+    // データを読み込む処理
+    async function loadSnippets() {
+      const listDiv = document.getElementById('snippet-list');
+      listDiv.innerHTML = "読み込み中...";
+
+      try {
+        const response = await fetch(API_URL);
+        const data = await response.json();
+        
+        listDiv.innerHTML = ""; // 一旦クリア
+        
+        data.forEach(item => {
+          const div = document.createElement('div');
+          div.className = "snippet-item";
+          div.innerHTML = `
+            <strong>${item.title || '無題'}</strong> (ID: ${item.id})
+            <pre><code>${item.code || ''}</code></pre>
+          `;
+          listDiv.appendChild(div);
+        });
+      } catch (error) {
+        listDiv.innerHTML = "❌ データの取得に失敗しました";
+      }
+    }
+
+    // 画面を開いたときに自動でデータを読み込む
+    loadSnippets();
+  </script>
+
+</body>
+</html>
