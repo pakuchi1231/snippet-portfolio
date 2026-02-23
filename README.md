@@ -58,35 +58,59 @@ graph LR
 
 ```mermaid
 graph TD
-    User((ユーザー)) -->|アクセス| WAF[AWS WAF]
-    WAF --> CF[Amazon CloudFront]
-    
-    CF -->|画面の表示| S3[Amazon S3]
-    CF -->|APIの呼び出し| APIGW[API Gateway]
-    
-    APIGW -->|ログイン確認| Cognito[Amazon Cognito]
-    APIGW --> Lambda[AWS Lambda]
-    
-    Lambda -->|よく見るデータを一時保存| DAX[DAX <br/> DynamoDB Accelerator]
-    DAX --> DDB[(DynamoDB)]
-    
-    Lambda -.->|エラー監視・通知| CW[CloudWatch / X-Ray]
-    
+    %% ユーザーからのアクセス
+    User((ユーザー)) -->|HTTPS| CF[Amazon CloudFront]
+    WAF[AWS WAF] -.->|脆弱性・DDoS防御| CF
+
+    %% フロントエンド配信
+    subgraph "Frontend / Edge"
+        CF -->|静的ファイル配信| S3[Amazon S3]
+    end
+
+    %% バックエンドAPIと認証
+    subgraph "Backend API"
+        CF -->|APIリクエスト| APIGW[API Gateway]
+        Cognito[Amazon Cognito] -.->|認証トークン検証| APIGW
+        APIGW -->|ルーティング| Lambda[AWS Lambda]
+    end
+
+    %% データベースとキャッシュ
+    subgraph "Data Layer"
+        Lambda -->|Read キャッシュ| DAX[Amazon DAX]
+        DAX -->|キャッシュミス/Write| DDB[(Amazon DynamoDB)]
+        DDB -.->|バックアップ| PITR((PITR: 自動復元))
+    end
+
+    %% 運用保守・監視
+    subgraph "Observability / CI・CD"
+        Lambda -.->|ログ・トレース| CW[CloudWatch / AWS X-Ray]
+        CW -.->|エラー検知・通知| SNS[SNS / Chatbot]
+        SNS -.->|アラート| Slack((Slack))
+        GitHub[GitHub Actions] -.->|自動デプロイ| S3
+        GitHub -.->|IaCデプロイ| Lambda
+    end
+
+    %% スタイリング
     style WAF fill:#f9f2e7,stroke:#d18c35,stroke-width:2px
     style Cognito fill:#f9f2e7,stroke:#d18c35,stroke-width:2px
     style DAX fill:#e6f0fa,stroke:#2b6cb0,stroke-width:2px
     style CW fill:#f9eef2,stroke:#c53030,stroke-width:2px
+    style GitHub fill:#eeeeee,stroke:#333333,stroke-width:2px
 ```
 
-### スケールアップに向けた具体的な設計の変更点
-* **セキュリティと負荷対策 (AWS WAF / CloudFront)**
-現在はVercelを使っていますが、AWSに統一してS3とCloudFrontでの配信に切り替えます。入り口にWAFを置き、悪意のある攻撃や異常なアクセスからシステムを守ります。
+### 💡 スケールアップを見据えた設計思想
 
-* **ログイン機能 (Amazon Cognito)**
-現在の共通パスワードを廃止し、Amazon Cognitoを導入します。ユーザーごとにアカウントを作り、自分が投稿したスニペットだけを編集・削除できるという一般的なWebサービスの形にします。
+数万人規模のユーザーが利用する商用サービスを想定した場合、以下の3点を軸にシステムの信頼性を高める設計を行っています。
 
-* **データベースの高速化 (Amazon DAX)**
-「みんながよく見る人気コード」などにアクセスが集中するとデータベースの負荷が上がるため、DynamoDBの手前にDAXを置き、表示スピードの向上とコスト削減を両立させます。
+#### 1. 可用性と冗長性
+* **マルチAZの活用:** CloudFront、API Gateway、Lambda、DynamoDBを組み合わせることで、特定のデータセンターに障害が起きてもサービスが止まらない高可用性を実現します。
+* **アクセス急増への自動対応:** ユーザーが急激に増えても、Lambdaの並列実行やDynamoDBの自動キャパシティ調整により、システムが自動で処理能力を拡張します。手動でのサーバー増設作業は一切不要です。
 
-* **システムの監視とエラー対応 (CloudWatch / X-Ray)**
-利用者が増えると、どこでエラーが起きているかの特定が難しくなります。AWS X-Rayを入れて処理の遅れを視覚化し、エラーが起きたらCloudWatch経由で開発者のSlackに自動で通知がいく仕組みを作ります。
+#### 2. セキュリティとデータ保護
+* **攻撃対策:** CloudFrontの入り口にAWS WAFを配置します。これにより、悪意のある攻撃（SQLインジェクションやDDoS攻撃など）がシステムの奥深くまで届く前にブロックします。
+* **本人確認:** 簡易パスワードを廃止し、Amazon Cognitoを導入します。各ユーザーに固有のアカウントを発行し、自分が作成したデータだけを操作できるという安全な権限管理を徹底します。
+* **データ消失の対策:** 誤操作やプログラムのバグによるデータ消失に備え、DynamoDBのPITRを有効化します。過去35日間のうち、任意の1秒前の状態までいつでもデータを復元できる体制を整えます。
+
+#### 3. 運用・保守を楽に
+* **エラーの見える化:** 大規模になると原因特定が難しくなるため、AWS X-Rayを導入して処理の遅れを可視化します。また、異常を検知した際はCloudWatchを通じて即座に開発者のSlackへ通知が飛ぶようにし、トラブルにすぐ気づける環境を作ります。
+* **CI/CD化:** GitHub Actionsを活用し、プログラムをGitHubにPushするだけで「自動テスト」と「AWSへのデプロイ」が完結する仕組みを構築します。これにより、人の手によるミスを完全に防ぎ、安全かつスピーディーに新機能を追加できるようにします。
