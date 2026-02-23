@@ -26,7 +26,7 @@
   </script>
 
   <style>
-    /* CSSは前回と同じなので省略せずそのまま */
+    /* === 共通システム変数 === */
     :root {
       --font-size-xs: 0.75rem; --font-size-sm: 0.875rem; --font-size-base: 1rem; --font-size-lg: 1.125rem;
       --font-family: 'Noto Sans JP', sans-serif;
@@ -41,15 +41,19 @@
     :root[data-theme="forest"] { --bg-base: #14532d; --bg-surface: #166534; --text-primary: #ecfdf5; --text-secondary: #6ee7b7; --border: rgba(110, 231, 183, 0.2); --accent: #10b981; --text-inverse: #14532d; }
     :root[data-theme="sunset"] { --bg-base: #431407; --bg-surface: #7c2d12; --text-primary: #fff7ed; --text-secondary: #fdba74; --border: rgba(253, 186, 116, 0.2); --accent: #f97316; --text-inverse: #fff; }
     :root[data-theme="sakura"] { --bg-base: #fdf2f8; --bg-surface: #ffffff; --text-primary: #831843; --text-secondary: #be185d; --border: rgba(190, 24, 93, 0.15); --accent: #ec4899; --text-inverse: #fff; }
+    
     * { box-sizing: border-box; }
     body { font-family: var(--font-family); background: var(--bg-base); color: var(--text-primary); margin: 0; padding: 0; transition: background 0.3s; }
+    
     #app-loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-base); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s; }
     #app-loading.hidden { opacity: 0; pointer-events: none; }
     .loading-logo { font-size: 4rem; color: var(--accent); animation: pulse 1.5s infinite; }
     @keyframes pulse { 0%, 100% { opacity: 0.8; transform: scale(0.95); } 50% { opacity: 1; transform: scale(1.05); } }
+    
     .container { max-width: 1000px; margin: 0 auto; padding: var(--space-4); }
     header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-6); background: var(--bg-surface); padding: var(--space-4); border-radius: var(--radius-md); box-shadow: var(--shadow); }
     .header__title { font-size: var(--font-size-xl); font-weight: bold; display: flex; align-items: center; gap: 8px; }
+    
     .btn { background: var(--accent); color: var(--text-inverse); border: none; padding: 10px 20px; border-radius: var(--radius-sm); cursor: pointer; font-weight: bold; font-family: inherit; transition: var(--transition-fast); display: inline-flex; align-items: center; gap: 8px; }
     .btn:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
     .btn:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -57,29 +61,68 @@
     .btn--danger { background: transparent; color: var(--color-danger); border: 1px solid var(--color-danger); }
     .btn--danger:hover:not(:disabled) { background: var(--color-danger); color: white; }
     .btn--icon { background: transparent; color: var(--text-primary); padding: 8px; }
+    
     .card { background: var(--bg-surface); padding: var(--space-6); border-radius: var(--radius-md); box-shadow: var(--shadow); margin-bottom: var(--space-6); border: 1px solid var(--border); }
     .form-group { margin-bottom: var(--space-4); }
     .form-group label { display: block; margin-bottom: var(--space-2); font-weight: 500; font-size: var(--font-size-sm); }
     input, select, textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-base); color: var(--text-primary); font-family: inherit; transition: border-color 0.2s; }
     input:focus, textarea:focus { outline: none; border-color: var(--accent); }
     .form-actions { display: flex; justify-content: flex-end; margin-top: var(--space-4); }
+    
     .search-bar { margin-bottom: var(--space-4); position: relative; }
-    .snippet-list { display: grid; gap: var(--space-4); }
-    .snippet-item { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: var(--space-4); transition: var(--transition-fast); }
+    
+    /* === 【重要】横幅はみ出し防止の最強コード === */
+    .snippet-list { 
+      display: grid; 
+      /* minmax(0, 1fr) によって中身がどんなに長くても枠を突き破らなくなります */
+      grid-template-columns: minmax(0, 1fr); 
+      gap: var(--space-4); 
+      width: 100%;
+    }
+    .snippet-item { 
+      background: var(--bg-surface); 
+      border: 1px solid var(--border); 
+      border-radius: var(--radius-md); 
+      padding: var(--space-4); 
+      transition: var(--transition-fast); 
+      /* 念のための横幅リセット */
+      min-width: 0; 
+      max-width: 100%;
+    }
+    
     .snippet-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-2); }
     .snippet-lang { background: var(--accent); color: var(--text-inverse); padding: 2px 8px; border-radius: 12px; font-size: var(--font-size-xs); }
-    .snippet-code { border-radius: var(--radius-sm); font-size: var(--font-size-sm); border: 1px solid var(--border); margin: 0; padding: 0; overflow-x: auto; max-width: 100%; }
-    /* Highlight.jsのパディング調整 */
-    .snippet-code code { padding: var(--space-4); border-radius: var(--radius-sm); font-family: monospace; } 
+    
+    /* === コードブロックの横スクロール設定 === */
+    .snippet-code { 
+      border-radius: var(--radius-sm); 
+      font-size: var(--font-size-sm); 
+      border: 1px solid var(--border); 
+      margin: 0; 
+      padding: 0; 
+      overflow-x: auto; /* はみ出たらスクロール */
+      max-width: 100%;
+      background: #282c34; /* ハイライトテーマの背景色に合わせる */
+    }
+    .snippet-code code { 
+      padding: var(--space-4); 
+      font-family: monospace; 
+      display: block; 
+      overflow-x: auto;
+    } 
+    
     .snippet-actions { display: flex; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-4); }
+    
     .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); }
     .modal-content { background: var(--bg-surface); padding: var(--space-6); border-radius: var(--radius-lg); width: 90%; max-width: 500px; box-shadow: var(--shadow); border: 1px solid var(--border); }
     .theme-selector { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-2); margin-top: var(--space-2); }
     .theme-btn { padding: 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; background: var(--bg-base); color: var(--text-primary); }
     .theme-btn.selected { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+    
     #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--text-primary); color: var(--bg-base); padding: 12px 24px; border-radius: 30px; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 2000; font-weight: bold; }
     #toast.show { transform: translateX(-50%) translateY(0); }
-    /* スマホ向けレスポンシブ対応 */
+    
+    /* === スマホ向けレスポンシブ対応 === */
     @media (max-width: 600px) {
       .container { padding: var(--space-2); }
       header { flex-direction: column; gap: var(--space-4); align-items: flex-start; }
@@ -188,7 +231,7 @@
     const API_URL = "https://kj77nq93g5.execute-api.ap-northeast-1.amazonaws.com/prod/snippets"; 
     
     let snippetsData = [];
-    let editingId = null; // 【追加】今編集しているデータのIDを覚えておく変数
+    let editingId = null;
 
     window.onload = () => {
       setTimeout(() => {
@@ -211,7 +254,6 @@
       }
     }
 
-    // 【大幅進化】保存と更新を自動で切り替え、パスワードも確認する
     async function saveSnippet() {
       const btn = document.getElementById('saveBtn');
       const title = document.getElementById('titleInput').value;
@@ -221,7 +263,6 @@
       let method = 'POST';
       let payload = { title, language: lang, code };
 
-      // もし編集中（editingIdがある）なら、更新(PUT)処理にする
       if (editingId) {
         const password = prompt("更新するには管理者パスワードを入力してください\n(ヒント: a***i)");
         if (!password) {
@@ -248,8 +289,8 @@
         }
 
         showToast(editingId ? "更新しました！" : "保存しました！");
-        cancelEdit(); // フォームをリセット
-        fetchSnippets(); // リストを再取得
+        cancelEdit(); 
+        fetchSnippets(); 
       } catch (error) {
         showToast(error.message, true);
       } finally {
@@ -258,7 +299,6 @@
       }
     }
 
-    // 【追加】編集モードにする機能
     function startEdit(id, title, lang, code) {
       editingId = id;
       document.getElementById('formTitle').innerText = "データを編集";
@@ -270,10 +310,9 @@
       document.getElementById('saveBtn').innerText = "更新する";
       document.getElementById('cancelBtn').innerText = "編集をキャンセル";
       validateForm();
-      window.scrollTo({ top: 0, behavior: 'smooth' }); // 上までスクロール
+      window.scrollTo({ top: 0, behavior: 'smooth' }); 
     }
 
-    // 【追加】編集モードをキャンセルする機能
     function cancelEdit() {
       editingId = null;
       document.getElementById('formTitle').innerText = "新規作成";
@@ -286,10 +325,9 @@
       validateForm();
     }
 
-    // 【修正】削除時にもパスワードを要求する
     async function deleteSnippet(id) {
       const password = prompt("本当に削除しますか？\n管理者パスワードを入力してください");
-      if (!password) return; // キャンセルされたら何もしない
+      if (!password) return; 
 
       const btn = document.getElementById(`del-${id}`);
       const originalText = btn.innerHTML;
@@ -345,7 +383,6 @@
         </div>
       `).join('');
 
-      // 【追加】コードを綺麗に色付けする！
       document.querySelectorAll('pre code').forEach((block) => {
         hljs.highlightElement(block);
       });
