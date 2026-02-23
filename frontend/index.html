@@ -13,6 +13,9 @@
   <script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css"/>
 
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
   <script>
     (function() {
       const savedTheme = localStorage.getItem('appTheme') || 'light';
@@ -23,55 +26,30 @@
   </script>
 
   <style>
-    /* === 共通システム変数 === */
+    /* CSSは前回と同じなので省略せずそのまま */
     :root {
-      --font-size-xs: 0.75rem;
-      --font-size-sm: 0.875rem;
-      --font-size-base: 1rem;
-      --font-size-lg: 1.125rem;
+      --font-size-xs: 0.75rem; --font-size-sm: 0.875rem; --font-size-base: 1rem; --font-size-lg: 1.125rem;
       --font-family: 'Noto Sans JP', sans-serif;
-      --space-2: 0.5rem;
-      --space-4: 1rem;
-      --space-6: 1.5rem;
-      --radius-sm: 6px;
-      --radius-md: 12px;
-      --transition-fast: 150ms ease;
-      
-      /* ライトテーマ (デフォルト) */
-      --bg-base: #f8fafc;
-      --bg-surface: #ffffff;
-      --text-primary: #0f172a;
-      --text-secondary: #64748b;
-      --text-inverse: #ffffff;
-      --border: rgba(15, 23, 42, 0.1);
-      --accent: #4f46e5;
-      --shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-      --color-danger: #ef4444;
-      --color-success: #10b981;
+      --space-2: 0.5rem; --space-4: 1rem; --space-6: 1.5rem;
+      --radius-sm: 6px; --radius-md: 12px; --transition-fast: 150ms ease;
+      --bg-base: #f8fafc; --bg-surface: #ffffff; --text-primary: #0f172a; --text-secondary: #64748b;
+      --text-inverse: #ffffff; --border: rgba(15, 23, 42, 0.1); --accent: #4f46e5;
+      --shadow: 0 4px 6px rgba(0, 0, 0, 0.05); --color-danger: #ef4444; --color-success: #10b981;
     }
-
-    /* 6種のテーマ定義 */
     :root[data-theme="dark"] { --bg-base: #1e293b; --bg-surface: #334155; --text-primary: #f1f5f9; --text-secondary: #94a3b8; --border: rgba(148, 163, 184, 0.2); --accent: #6366f1; --text-inverse: #ffffff; }
     :root[data-theme="ocean"] { --bg-base: #0c4a6e; --bg-surface: #075985; --text-primary: #e0f2fe; --text-secondary: #7dd3fc; --border: rgba(125, 211, 252, 0.2); --accent: #0284c7; --text-inverse: #ffffff; }
     :root[data-theme="forest"] { --bg-base: #14532d; --bg-surface: #166534; --text-primary: #ecfdf5; --text-secondary: #6ee7b7; --border: rgba(110, 231, 183, 0.2); --accent: #10b981; --text-inverse: #14532d; }
     :root[data-theme="sunset"] { --bg-base: #431407; --bg-surface: #7c2d12; --text-primary: #fff7ed; --text-secondary: #fdba74; --border: rgba(253, 186, 116, 0.2); --accent: #f97316; --text-inverse: #fff; }
     :root[data-theme="sakura"] { --bg-base: #fdf2f8; --bg-surface: #ffffff; --text-primary: #831843; --text-secondary: #be185d; --border: rgba(190, 24, 93, 0.15); --accent: #ec4899; --text-inverse: #fff; }
-
     * { box-sizing: border-box; }
     body { font-family: var(--font-family); background: var(--bg-base); color: var(--text-primary); margin: 0; padding: 0; transition: background 0.3s; }
-    
-    /* ロード画面 */
     #app-loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-base); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s; }
     #app-loading.hidden { opacity: 0; pointer-events: none; }
     .loading-logo { font-size: 4rem; color: var(--accent); animation: pulse 1.5s infinite; }
     @keyframes pulse { 0%, 100% { opacity: 0.8; transform: scale(0.95); } 50% { opacity: 1; transform: scale(1.05); } }
-
-    /* レイアウト */
     .container { max-width: 1000px; margin: 0 auto; padding: var(--space-4); }
     header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-6); background: var(--bg-surface); padding: var(--space-4); border-radius: var(--radius-md); box-shadow: var(--shadow); }
     .header__title { font-size: var(--font-size-xl); font-weight: bold; display: flex; align-items: center; gap: 8px; }
-    
-    /* ボタン */
     .btn { background: var(--accent); color: var(--text-inverse); border: none; padding: 10px 20px; border-radius: var(--radius-sm); cursor: pointer; font-weight: bold; font-family: inherit; transition: var(--transition-fast); display: inline-flex; align-items: center; gap: 8px; }
     .btn:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
     .btn:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -79,33 +57,26 @@
     .btn--danger { background: transparent; color: var(--color-danger); border: 1px solid var(--color-danger); }
     .btn--danger:hover:not(:disabled) { background: var(--color-danger); color: white; }
     .btn--icon { background: transparent; color: var(--text-primary); padding: 8px; }
-
-    /* フォーム (ストーリー性・コンストレイント) */
     .card { background: var(--bg-surface); padding: var(--space-6); border-radius: var(--radius-md); box-shadow: var(--shadow); margin-bottom: var(--space-6); border: 1px solid var(--border); }
     .form-group { margin-bottom: var(--space-4); }
     .form-group label { display: block; margin-bottom: var(--space-2); font-weight: 500; font-size: var(--font-size-sm); }
     input, select, textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-base); color: var(--text-primary); font-family: inherit; transition: border-color 0.2s; }
     input:focus, textarea:focus { outline: none; border-color: var(--accent); }
-    .form-actions { display: flex; justify-content: flex-end; margin-top: var(--space-4); } /* ボタン重力 */
-
-    /* スニペット一覧 */
+    .form-actions { display: flex; justify-content: flex-end; margin-top: var(--space-4); }
     .search-bar { margin-bottom: var(--space-4); position: relative; }
     .snippet-list { display: grid; gap: var(--space-4); }
     .snippet-item { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: var(--space-4); transition: var(--transition-fast); }
-    .snippet-item:hover { box-shadow: var(--shadow); }
     .snippet-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-2); }
     .snippet-lang { background: var(--accent); color: var(--text-inverse); padding: 2px 8px; border-radius: 12px; font-size: var(--font-size-xs); }
-    .snippet-code { background: var(--bg-base); padding: var(--space-4); border-radius: var(--radius-sm); overflow-x: auto; font-family: monospace; font-size: var(--font-size-sm); border: 1px solid var(--border); }
+    .snippet-code { border-radius: var(--radius-sm); font-size: var(--font-size-sm); border: 1px solid var(--border); margin: 0; padding: 0;}
+    /* Highlight.jsのパディング調整 */
+    .snippet-code code { padding: var(--space-4); border-radius: var(--radius-sm); font-family: monospace; } 
     .snippet-actions { display: flex; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-4); }
-
-    /* モーダル */
     .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); }
     .modal-content { background: var(--bg-surface); padding: var(--space-6); border-radius: var(--radius-lg); width: 90%; max-width: 500px; box-shadow: var(--shadow); border: 1px solid var(--border); }
     .theme-selector { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-2); margin-top: var(--space-2); }
     .theme-btn { padding: 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; background: var(--bg-base); color: var(--text-primary); }
     .theme-btn.selected { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
-
-    /* トースト通知 */
     #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--text-primary); color: var(--bg-base); padding: 12px 24px; border-radius: 30px; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 2000; font-weight: bold; }
     #toast.show { transform: translateX(-50%) translateY(0); }
   </style>
@@ -131,19 +102,19 @@
 
     <main>
       <section class="card" id="tour-form">
-        <h2 style="margin-top:0; font-size: var(--font-size-lg);">新規作成</h2>
+        <h2 id="formTitle" style="margin-top:0; font-size: var(--font-size-lg);">新規作成</h2>
         <div class="form-group">
-          <label>タイトル <span style="color:var(--text-secondary); font-size:var(--font-size-xs);">例: データベース接続処理</span></label>
-          <input type="text" id="titleInput" placeholder="何のためのコードですか？" oninput="validateForm()">
+          <label>タイトル</label>
+          <input type="text" id="titleInput" placeholder="例: データベース接続処理" oninput="validateForm()">
         </div>
         <div class="form-group">
           <label>プログラミング言語</label>
           <select id="langInput" onchange="validateForm()">
             <option value="">選択してください</option>
-            <option value="JavaScript">JavaScript / TypeScript</option>
-            <option value="Python">Python</option>
-            <option value="HTML/CSS">HTML / CSS</option>
-            <option value="その他">その他</option>
+            <option value="javascript">JavaScript / TypeScript</option>
+            <option value="python">Python</option>
+            <option value="html">HTML / CSS</option>
+            <option value="plaintext">その他</option>
           </select>
         </div>
         <div class="form-group">
@@ -151,7 +122,7 @@
           <textarea id="codeInput" rows="5" placeholder="ここにコードを貼り付けます" oninput="validateForm()"></textarea>
         </div>
         <div class="form-actions">
-          <button class="btn btn--ghost" onclick="clearForm()" style="margin-right:8px;">入力をクリア</button>
+          <button class="btn btn--ghost" onclick="cancelEdit()" style="margin-right:8px;" id="cancelBtn">クリア</button>
           <button class="btn" id="saveBtn" onclick="saveSnippet()" disabled>保存</button>
         </div>
       </section>
@@ -161,7 +132,6 @@
           <span class="material-icons" style="position:absolute; left:12px; top:12px; color:var(--text-secondary);">search</span>
           <input type="text" id="searchInput" placeholder="タイトルや言語で検索..." oninput="filterSnippets()" style="padding-left:40px;">
         </div>
-
         <div id="snippetList" class="snippet-list">
           <div style="text-align:center; padding: 40px; color: var(--text-secondary);">
             <span class="material-icons" style="font-size: 40px; opacity: 0.5; animation: pulse 1.5s infinite;">sync</span>
@@ -175,7 +145,6 @@
   <div id="settingsModal" class="modal" onclick="closeOnBackground(event, 'settingsModal')">
     <div class="modal-content">
       <h3 style="margin-top:0;">表示設定</h3>
-      
       <div class="form-group">
         <label>テーマカラー</label>
         <div class="theme-selector">
@@ -187,7 +156,6 @@
           <button class="theme-btn" onclick="setTheme('sakura')">サクラ</button>
         </div>
       </div>
-
       <div class="form-group">
         <label>フォント</label>
         <select id="fontSelect" onchange="setFont(this.value)">
@@ -196,7 +164,6 @@
           <option value="'M PLUS Rounded 1c', sans-serif">M PLUS Rounded 1c (丸文字)</option>
         </select>
       </div>
-
       <div class="form-actions">
         <button class="btn btn--ghost" onclick="closeModal('settingsModal')">閉じる</button>
       </div>
@@ -206,32 +173,23 @@
   <div id="toast"></div>
 
   <script>
-    // ▼▼▼ API Gateway URL ▼▼▼
-    const API_URL = "https://kj77nq93g5.execute-api.ap-northeast-1.amazonaws.com/prod/snippets";
-    // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
-
+    // ▼▼▼ APIのURL（snippets付き） ▼▼▼
+    const API_URL = "https://kj77nq93g5.execute-api.ap-northeast-1.amazonaws.com/prod/snippets"; 
+    
     let snippetsData = [];
+    let editingId = null; // 【追加】今編集しているデータのIDを覚えておく変数
 
-    // --- 初期化処理 ---
     window.onload = () => {
       setTimeout(() => {
         document.getElementById('app-loading').classList.add('hidden');
         fetchSnippets();
-        
-        // 初回訪問時のみツアー実行 (HIG原則: 即座の喜び)
-        if (!localStorage.getItem('tourDone')) {
-          startTour();
-          localStorage.setItem('tourDone', 'true');
-        }
+        if (!localStorage.getItem('tourDone')) { startTour(); localStorage.setItem('tourDone', 'true'); }
       }, 800);
-
-      // 設定UIの復元
       const savedTheme = document.documentElement.getAttribute('data-theme');
       updateThemeButtons(savedTheme);
       document.getElementById('fontSelect').value = document.documentElement.style.getPropertyValue('--font-family') || "'Noto Sans JP', sans-serif";
     };
 
-    // --- API通信: 取得 ---
     async function fetchSnippets() {
       try {
         const response = await fetch(API_URL);
@@ -239,40 +197,88 @@
         renderSnippets(snippetsData);
       } catch (error) {
         showToast("データの取得に失敗しました", true);
-        document.getElementById('snippetList').innerHTML = `<div style="text-align:center; padding: 20px;">読み込みエラーが発生しました</div>`;
       }
     }
 
-    // --- API通信: 保存 ---
+    // 【大幅進化】保存と更新を自動で切り替え、パスワードも確認する
     async function saveSnippet() {
       const btn = document.getElementById('saveBtn');
       const title = document.getElementById('titleInput').value;
       const lang = document.getElementById('langInput').value;
       const code = document.getElementById('codeInput').value;
 
+      let method = 'POST';
+      let payload = { title, language: lang, code };
+
+      // もし編集中（editingIdがある）なら、更新(PUT)処理にする
+      if (editingId) {
+        const password = prompt("更新するには管理者パスワードを入力してください\n(ヒント: a***i)");
+        if (!password) {
+          showToast("キャンセルしました");
+          return;
+        }
+        method = 'PUT';
+        payload = { id: editingId, title, language: lang, code, password };
+      }
+
       btn.disabled = true;
-      btn.innerHTML = '<span class="material-icons">sync</span> 保存中...';
+      btn.innerHTML = '<span class="material-icons">sync</span> 処理中...';
 
       try {
-        await fetch(API_URL, {
-          method: 'POST',
-          body: JSON.stringify({ title, language: lang, code }),
+        const response = await fetch(API_URL, {
+          method: method,
+          body: JSON.stringify(payload),
           headers: { 'Content-Type': 'application/json' }
         });
-        showToast("スニペットを保存しました");
-        clearForm();
-        fetchSnippets(); // リスト更新
+
+        if (!response.ok) {
+          if(response.status === 403) throw new Error("パスワードが違います");
+          throw new Error("保存に失敗しました");
+        }
+
+        showToast(editingId ? "更新しました！" : "保存しました！");
+        cancelEdit(); // フォームをリセット
+        fetchSnippets(); // リストを再取得
       } catch (error) {
-        showToast("保存に失敗しました", true);
+        showToast(error.message, true);
       } finally {
-        btn.innerHTML = '保存';
-        validateForm(); // ボタン状態リセット
+        btn.innerHTML = editingId ? '更新' : '保存';
+        validateForm();
       }
     }
 
-    // --- API通信: 削除 ---
+    // 【追加】編集モードにする機能
+    function startEdit(id, title, lang, code) {
+      editingId = id;
+      document.getElementById('formTitle').innerText = "データを編集";
+      document.getElementById('formTitle').style.color = "var(--accent)";
+      document.getElementById('titleInput').value = title;
+      document.getElementById('langInput').value = lang;
+      document.getElementById('codeInput').value = code;
+      
+      document.getElementById('saveBtn').innerText = "更新する";
+      document.getElementById('cancelBtn').innerText = "編集をキャンセル";
+      validateForm();
+      window.scrollTo({ top: 0, behavior: 'smooth' }); // 上までスクロール
+    }
+
+    // 【追加】編集モードをキャンセルする機能
+    function cancelEdit() {
+      editingId = null;
+      document.getElementById('formTitle').innerText = "新規作成";
+      document.getElementById('formTitle').style.color = "var(--text-primary)";
+      document.getElementById('titleInput').value = '';
+      document.getElementById('langInput').value = '';
+      document.getElementById('codeInput').value = '';
+      document.getElementById('saveBtn').innerText = "保存";
+      document.getElementById('cancelBtn').innerText = "クリア";
+      validateForm();
+    }
+
+    // 【修正】削除時にもパスワードを要求する
     async function deleteSnippet(id) {
-      if (!confirm("このスニペットを削除しますか？\nこの操作は取り消せません。")) return;
+      const password = prompt("本当に削除しますか？\n管理者パスワードを入力してください");
+      if (!password) return; // キャンセルされたら何もしない
 
       const btn = document.getElementById(`del-${id}`);
       const originalText = btn.innerHTML;
@@ -280,21 +286,26 @@
       btn.innerHTML = '削除中...';
 
       try {
-        await fetch(API_URL, {
+        const response = await fetch(API_URL, {
           method: 'DELETE',
-          body: JSON.stringify({ id }),
+          body: JSON.stringify({ id, password }),
           headers: { 'Content-Type': 'application/json' }
         });
+
+        if (!response.ok) {
+          if(response.status === 403) throw new Error("パスワードが違います");
+          throw new Error("削除に失敗しました");
+        }
+
         showToast("削除しました");
         fetchSnippets();
       } catch (error) {
-        showToast("削除に失敗しました", true);
+        showToast(error.message, true);
         btn.disabled = false;
         btn.innerHTML = originalText;
       }
     }
 
-    // --- UI: 描画とフィルタ ---
     function renderSnippets(data) {
       const list = document.getElementById('snippetList');
       if (data.length === 0) {
@@ -306,12 +317,15 @@
         <div class="snippet-item">
           <div class="snippet-header">
             <h3 style="margin:0; font-size:var(--font-size-base);">${escapeHTML(item.title)}</h3>
-            <span class="snippet-lang">${escapeHTML(item.language)}</span>
+            <span class="snippet-lang">${escapeHTML(item.language).toUpperCase()}</span>
           </div>
-          <pre class="snippet-code"><code>${escapeHTML(item.code)}</code></pre>
+          <pre class="snippet-code"><code class="language-${escapeHTML(item.language)}">${escapeHTML(item.code)}</code></pre>
           <div class="snippet-actions">
             <button class="btn btn--ghost" onclick="copyCode(this, '${escapeHTML(item.code).replace(/'/g, "\\'")}')">
               <span class="material-icons" style="font-size:16px;">content_copy</span> コピー
+            </button>
+            <button class="btn btn--ghost" onclick="startEdit('${item.id}', '${escapeHTML(item.title)}', '${escapeHTML(item.language)}', '${escapeHTML(item.code).replace(/'/g, "\\'")}')">
+              <span class="material-icons" style="font-size:16px;">edit</span> 編集
             </button>
             <button id="del-${item.id}" class="btn btn--danger" onclick="deleteSnippet('${item.id}')">
               <span class="material-icons" style="font-size:16px;">delete</span> 削除
@@ -319,6 +333,11 @@
           </div>
         </div>
       `).join('');
+
+      // 【追加】コードを綺麗に色付けする！
+      document.querySelectorAll('pre code').forEach((block) => {
+        hljs.highlightElement(block);
+      });
     }
 
     function filterSnippets() {
@@ -330,7 +349,6 @@
       renderSnippets(filtered);
     }
 
-    // --- UI: 入力制御 (HIG コンストレイント) ---
     function validateForm() {
       const title = document.getElementById('titleInput').value.trim();
       const lang = document.getElementById('langInput').value;
@@ -338,28 +356,16 @@
       document.getElementById('saveBtn').disabled = !(title && lang && code);
     }
 
-    function clearForm() {
-      document.getElementById('titleInput').value = '';
-      document.getElementById('langInput').value = '';
-      document.getElementById('codeInput').value = '';
-      validateForm();
-    }
-
-    // --- UI: コピー機能 ---
     function copyCode(btn, text) {
       navigator.clipboard.writeText(text).then(() => {
         const originalHTML = btn.innerHTML;
-        btn.innerHTML = '<span class="material-icons" style="font-size:16px;">check</span> コピー完了';
+        btn.innerHTML = '<span class="material-icons" style="font-size:16px;">check</span> 完了';
         btn.style.borderColor = 'var(--color-success)';
         btn.style.color = 'var(--color-success)';
-        setTimeout(() => {
-          btn.innerHTML = originalHTML;
-          btn.style = '';
-        }, 2000);
+        setTimeout(() => { btn.innerHTML = originalHTML; btn.style = ''; }, 2000);
       });
     }
 
-    // --- UI: トースト通知 ---
     function showToast(message, isError = false) {
       const toast = document.getElementById('toast');
       toast.textContent = message;
@@ -368,51 +374,27 @@
       setTimeout(() => toast.classList.remove('show'), 3000);
     }
 
-    // --- UI: モーダル・テーマ制御 ---
     function openModal(id) { document.getElementById(id).style.display = 'flex'; }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
     function closeOnBackground(e, id) { if (e.target.id === id) closeModal(id); }
-
-    function setTheme(theme) {
-      document.documentElement.setAttribute('data-theme', theme);
-      localStorage.setItem('appTheme', theme);
-      updateThemeButtons(theme);
-    }
-    function updateThemeButtons(activeTheme) {
-      document.querySelectorAll('.theme-btn').forEach(btn => {
-        btn.classList.toggle('selected', btn.textContent.includes(
-          {'light':'ライト','dark':'ダーク','ocean':'オーシャン','forest':'フォレスト','sunset':'サンセット','sakura':'サクラ'}[activeTheme]
-        ));
-      });
-    }
-    function setFont(font) {
-      document.documentElement.style.setProperty('--font-family', font);
-      localStorage.setItem('appFont', font);
-    }
-
-    // --- ツアー機能 (Driver.js) ---
+    function setTheme(theme) { document.documentElement.setAttribute('data-theme', theme); localStorage.setItem('appTheme', theme); updateThemeButtons(theme); }
+    function updateThemeButtons(activeTheme) { document.querySelectorAll('.theme-btn').forEach(btn => { btn.classList.toggle('selected', btn.textContent.includes({'light':'ライト','dark':'ダーク','ocean':'オーシャン','forest':'フォレスト','sunset':'サンセット','sakura':'サクラ'}[activeTheme])); }); }
+    function setFont(font) { document.documentElement.style.setProperty('--font-family', font); localStorage.setItem('appFont', font); }
+    
     function startTour() {
       const driver = window.driver.js.driver;
       const tourObj = driver({
-        showProgress: true,
-        allowKeyboardControl: true,
-        doneBtnText: '完了',
-        nextBtnText: '次へ',
-        prevBtnText: '戻る',
+        showProgress: true, allowKeyboardControl: true, doneBtnText: '完了', nextBtnText: '次へ', prevBtnText: '戻る',
         steps: [
-          { element: '#tour-header', popover: { title: 'スニペット管理へようこそ', description: 'よく使うコードをクラウドに保存できるアプリです。' } },
+          { element: '#tour-header', popover: { title: 'スニペット管理', description: 'コードをクラウドに保存できるアプリです。' } },
           { element: '#tour-form', popover: { title: 'コードの登録', description: '言語とコードを入力して「保存」を押すだけです。' } },
-          { element: '#tour-list', popover: { title: 'コードの活用', description: '保存したコードはここからワンクリックでコピーできます。検索も可能です！' } },
+          { element: '#tour-list', popover: { title: 'コードの活用', description: 'コピーや編集、削除（要パスワード）が可能です！' } },
           { element: '[onclick="openModal(\'settingsModal\')"]', popover: { title: 'デザイン変更', description: 'ここで6種類の色とフォントを自由に変更できます。' } }
         ]
       });
       tourObj.drive();
     }
-
-    // --- ユーティリティ ---
-    function escapeHTML(str) {
-      return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag]));
-    }
+    function escapeHTML(str) { return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag])); }
   </script>
 </body>
 </html>
