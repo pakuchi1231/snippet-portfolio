@@ -2,98 +2,417 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>Snippet Share ポートフォリオ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>スニペット管理</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=M+PLUS+Rounded+1c:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+  <script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css"/>
+
+  <script>
+    (function() {
+      const savedTheme = localStorage.getItem('appTheme') || 'light';
+      const savedFont = localStorage.getItem('appFont') || "'Noto Sans JP', sans-serif";
+      document.documentElement.setAttribute('data-theme', savedTheme);
+      document.documentElement.style.setProperty('--font-family', savedFont);
+    })();
+  </script>
+
   <style>
-    body { font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9; }
-    h1 { color: #333; }
-    .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
-    input, textarea { width: 100%; margin-bottom: 10px; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
-    button { background-color: #007bff; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; }
-    button:hover { background-color: #0056b3; }
-    .snippet-item { background: #eee; padding: 10px; margin-bottom: 10px; border-radius: 4px; }
-    pre { background: #222; color: #0f0; padding: 10px; overflow-x: auto; border-radius: 4px; }
+    /* === 共通システム変数 === */
+    :root {
+      --font-size-xs: 0.75rem;
+      --font-size-sm: 0.875rem;
+      --font-size-base: 1rem;
+      --font-size-lg: 1.125rem;
+      --font-family: 'Noto Sans JP', sans-serif;
+      --space-2: 0.5rem;
+      --space-4: 1rem;
+      --space-6: 1.5rem;
+      --radius-sm: 6px;
+      --radius-md: 12px;
+      --transition-fast: 150ms ease;
+      
+      /* ライトテーマ (デフォルト) */
+      --bg-base: #f8fafc;
+      --bg-surface: #ffffff;
+      --text-primary: #0f172a;
+      --text-secondary: #64748b;
+      --text-inverse: #ffffff;
+      --border: rgba(15, 23, 42, 0.1);
+      --accent: #4f46e5;
+      --shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      --color-danger: #ef4444;
+      --color-success: #10b981;
+    }
+
+    /* 6種のテーマ定義 */
+    :root[data-theme="dark"] { --bg-base: #1e293b; --bg-surface: #334155; --text-primary: #f1f5f9; --text-secondary: #94a3b8; --border: rgba(148, 163, 184, 0.2); --accent: #6366f1; --text-inverse: #ffffff; }
+    :root[data-theme="ocean"] { --bg-base: #0c4a6e; --bg-surface: #075985; --text-primary: #e0f2fe; --text-secondary: #7dd3fc; --border: rgba(125, 211, 252, 0.2); --accent: #0284c7; --text-inverse: #ffffff; }
+    :root[data-theme="forest"] { --bg-base: #14532d; --bg-surface: #166534; --text-primary: #ecfdf5; --text-secondary: #6ee7b7; --border: rgba(110, 231, 183, 0.2); --accent: #10b981; --text-inverse: #14532d; }
+    :root[data-theme="sunset"] { --bg-base: #431407; --bg-surface: #7c2d12; --text-primary: #fff7ed; --text-secondary: #fdba74; --border: rgba(253, 186, 116, 0.2); --accent: #f97316; --text-inverse: #fff; }
+    :root[data-theme="sakura"] { --bg-base: #fdf2f8; --bg-surface: #ffffff; --text-primary: #831843; --text-secondary: #be185d; --border: rgba(190, 24, 93, 0.15); --accent: #ec4899; --text-inverse: #fff; }
+
+    * { box-sizing: border-box; }
+    body { font-family: var(--font-family); background: var(--bg-base); color: var(--text-primary); margin: 0; padding: 0; transition: background 0.3s; }
+    
+    /* ロード画面 */
+    #app-loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-base); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s; }
+    #app-loading.hidden { opacity: 0; pointer-events: none; }
+    .loading-logo { font-size: 4rem; color: var(--accent); animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 0.8; transform: scale(0.95); } 50% { opacity: 1; transform: scale(1.05); } }
+
+    /* レイアウト */
+    .container { max-width: 1000px; margin: 0 auto; padding: var(--space-4); }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-6); background: var(--bg-surface); padding: var(--space-4); border-radius: var(--radius-md); box-shadow: var(--shadow); }
+    .header__title { font-size: var(--font-size-xl); font-weight: bold; display: flex; align-items: center; gap: 8px; }
+    
+    /* ボタン */
+    .btn { background: var(--accent); color: var(--text-inverse); border: none; padding: 10px 20px; border-radius: var(--radius-sm); cursor: pointer; font-weight: bold; font-family: inherit; transition: var(--transition-fast); display: inline-flex; align-items: center; gap: 8px; }
+    .btn:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn--ghost { background: transparent; color: var(--text-primary); border: 1px solid var(--border); }
+    .btn--danger { background: transparent; color: var(--color-danger); border: 1px solid var(--color-danger); }
+    .btn--danger:hover:not(:disabled) { background: var(--color-danger); color: white; }
+    .btn--icon { background: transparent; color: var(--text-primary); padding: 8px; }
+
+    /* フォーム (ストーリー性・コンストレイント) */
+    .card { background: var(--bg-surface); padding: var(--space-6); border-radius: var(--radius-md); box-shadow: var(--shadow); margin-bottom: var(--space-6); border: 1px solid var(--border); }
+    .form-group { margin-bottom: var(--space-4); }
+    .form-group label { display: block; margin-bottom: var(--space-2); font-weight: 500; font-size: var(--font-size-sm); }
+    input, select, textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-base); color: var(--text-primary); font-family: inherit; transition: border-color 0.2s; }
+    input:focus, textarea:focus { outline: none; border-color: var(--accent); }
+    .form-actions { display: flex; justify-content: flex-end; margin-top: var(--space-4); } /* ボタン重力 */
+
+    /* スニペット一覧 */
+    .search-bar { margin-bottom: var(--space-4); position: relative; }
+    .snippet-list { display: grid; gap: var(--space-4); }
+    .snippet-item { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: var(--space-4); transition: var(--transition-fast); }
+    .snippet-item:hover { box-shadow: var(--shadow); }
+    .snippet-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-2); }
+    .snippet-lang { background: var(--accent); color: var(--text-inverse); padding: 2px 8px; border-radius: 12px; font-size: var(--font-size-xs); }
+    .snippet-code { background: var(--bg-base); padding: var(--space-4); border-radius: var(--radius-sm); overflow-x: auto; font-family: monospace; font-size: var(--font-size-sm); border: 1px solid var(--border); }
+    .snippet-actions { display: flex; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-4); }
+
+    /* モーダル */
+    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); }
+    .modal-content { background: var(--bg-surface); padding: var(--space-6); border-radius: var(--radius-lg); width: 90%; max-width: 500px; box-shadow: var(--shadow); border: 1px solid var(--border); }
+    .theme-selector { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-2); margin-top: var(--space-2); }
+    .theme-btn { padding: 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; background: var(--bg-base); color: var(--text-primary); }
+    .theme-btn.selected { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+
+    /* トースト通知 */
+    #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--text-primary); color: var(--bg-base); padding: 12px 24px; border-radius: 30px; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 2000; font-weight: bold; }
+    #toast.show { transform: translateX(-50%) translateY(0); }
   </style>
 </head>
 <body>
 
-  <h1>📝 Snippet Share API</h1>
-  
-  <div class="card">
-    <h3>新しいコードを保存する</h3>
-    <form id="snippet-form">
-      <input type="text" id="title" placeholder="タイトル (例: はじめてのPython)" required>
-      <textarea id="code" rows="5" placeholder="コードの中身を書いてください..." required></textarea>
-      <button type="submit">AWSに保存！</button>
-    </form>
-    <p id="message" style="color: green; font-weight: bold;"></p>
+  <div id="app-loading">
+    <span class="material-icons loading-logo">code</span>
+    <div style="font-weight:bold; letter-spacing: 2px; color: var(--text-secondary);">スニペット管理</div>
   </div>
 
-  <div class="card">
-    <h3>保存されたコード一覧</h3>
-    <button onclick="loadSnippets()" style="background-color: #28a745; margin-bottom: 10px;">更新する</button>
-    <div id="snippet-list">
+  <div class="container">
+    <header id="tour-header">
+      <div class="header__title">
+        <span class="material-icons" style="color: var(--accent);">data_object</span>
+        スニペット管理
       </div>
+      <div>
+        <button class="btn btn--icon" onclick="startTour()" title="使い方を見る"><span class="material-icons">help_outline</span></button>
+        <button class="btn btn--icon" onclick="openModal('settingsModal')" title="設定"><span class="material-icons">palette</span></button>
+      </div>
+    </header>
+
+    <main>
+      <section class="card" id="tour-form">
+        <h2 style="margin-top:0; font-size: var(--font-size-lg);">新規作成</h2>
+        <div class="form-group">
+          <label>タイトル <span style="color:var(--text-secondary); font-size:var(--font-size-xs);">例: データベース接続処理</span></label>
+          <input type="text" id="titleInput" placeholder="何のためのコードですか？" oninput="validateForm()">
+        </div>
+        <div class="form-group">
+          <label>プログラミング言語</label>
+          <select id="langInput" onchange="validateForm()">
+            <option value="">選択してください</option>
+            <option value="JavaScript">JavaScript / TypeScript</option>
+            <option value="Python">Python</option>
+            <option value="HTML/CSS">HTML / CSS</option>
+            <option value="その他">その他</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>コード内容</label>
+          <textarea id="codeInput" rows="5" placeholder="ここにコードを貼り付けます" oninput="validateForm()"></textarea>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn--ghost" onclick="clearForm()" style="margin-right:8px;">入力をクリア</button>
+          <button class="btn" id="saveBtn" onclick="saveSnippet()" disabled>保存</button>
+        </div>
+      </section>
+
+      <section id="tour-list">
+        <div class="search-bar">
+          <span class="material-icons" style="position:absolute; left:12px; top:12px; color:var(--text-secondary);">search</span>
+          <input type="text" id="searchInput" placeholder="タイトルや言語で検索..." oninput="filterSnippets()" style="padding-left:40px;">
+        </div>
+
+        <div id="snippetList" class="snippet-list">
+          <div style="text-align:center; padding: 40px; color: var(--text-secondary);">
+            <span class="material-icons" style="font-size: 40px; opacity: 0.5; animation: pulse 1.5s infinite;">sync</span>
+            <p>データを読み込み中...</p>
+          </div>
+        </div>
+      </section>
+    </main>
   </div>
+
+  <div id="settingsModal" class="modal" onclick="closeOnBackground(event, 'settingsModal')">
+    <div class="modal-content">
+      <h3 style="margin-top:0;">表示設定</h3>
+      
+      <div class="form-group">
+        <label>テーマカラー</label>
+        <div class="theme-selector">
+          <button class="theme-btn" onclick="setTheme('light')">ライト</button>
+          <button class="theme-btn" onclick="setTheme('dark')">ダーク</button>
+          <button class="theme-btn" onclick="setTheme('ocean')">オーシャン</button>
+          <button class="theme-btn" onclick="setTheme('forest')">フォレスト</button>
+          <button class="theme-btn" onclick="setTheme('sunset')">サンセット</button>
+          <button class="theme-btn" onclick="setTheme('sakura')">サクラ</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>フォント</label>
+        <select id="fontSelect" onchange="setFont(this.value)">
+          <option value="'Noto Sans JP', sans-serif">Noto Sans JP (標準)</option>
+          <option value="'BIZ UDPGothic', sans-serif">BIZ UDPGothic (見やすい)</option>
+          <option value="'M PLUS Rounded 1c', sans-serif">M PLUS Rounded 1c (丸文字)</option>
+        </select>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn--ghost" onclick="closeModal('settingsModal')">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
 
   <script>
-    // ★★★ ここをあなたのURLに書き換えてください！ ★★★
-    const API_URL = "https://kj77nq93g5.execute-api.ap-northeast-1.amazonaws.com/prod/snippets";
+    // ▼▼▼ API Gateway URL ▼▼▼
+    const API_URL = "https://kj77nq93g5.execute-api.ap-northeast-1.amazonaws.com/prod/"; 
+    // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
-    // データを保存する処理
-    document.getElementById('snippet-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const title = document.getElementById('title').value;
-      const code = document.getElementById('code').value;
+    let snippetsData = [];
 
-      document.getElementById('message').innerText = "保存中...";
-
-      try {
-        const response = await fetch(API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title, code, language: "text" })
-        });
-
-        if(response.ok) {
-          document.getElementById('message').innerText = "✅ 保存成功！";
-          document.getElementById('snippet-form').reset();
-          loadSnippets(); // 保存したら自動で一覧を更新
-        } else {
-          document.getElementById('message').innerText = "❌ エラーが発生しました";
+    // --- 初期化処理 ---
+    window.onload = () => {
+      setTimeout(() => {
+        document.getElementById('app-loading').classList.add('hidden');
+        fetchSnippets();
+        
+        // 初回訪問時のみツアー実行 (HIG原則: 即座の喜び)
+        if (!localStorage.getItem('tourDone')) {
+          startTour();
+          localStorage.setItem('tourDone', 'true');
         }
-      } catch (error) {
-        document.getElementById('message').innerText = "❌ ネットワークエラーです";
-      }
-    });
+      }, 800);
 
-    // データを読み込む処理
-    async function loadSnippets() {
-      const listDiv = document.getElementById('snippet-list');
-      listDiv.innerHTML = "読み込み中...";
+      // 設定UIの復元
+      const savedTheme = document.documentElement.getAttribute('data-theme');
+      updateThemeButtons(savedTheme);
+      document.getElementById('fontSelect').value = document.documentElement.style.getPropertyValue('--font-family') || "'Noto Sans JP', sans-serif";
+    };
 
+    // --- API通信: 取得 ---
+    async function fetchSnippets() {
       try {
         const response = await fetch(API_URL);
-        const data = await response.json();
-        
-        listDiv.innerHTML = ""; // 一旦クリア
-        
-        data.forEach(item => {
-          const div = document.createElement('div');
-          div.className = "snippet-item";
-          div.innerHTML = `
-            <strong>${item.title || '無題'}</strong> (ID: ${item.id})
-            <pre><code>${item.code || ''}</code></pre>
-          `;
-          listDiv.appendChild(div);
-        });
+        snippetsData = await response.json();
+        renderSnippets(snippetsData);
       } catch (error) {
-        listDiv.innerHTML = "❌ データの取得に失敗しました";
+        showToast("データの取得に失敗しました", true);
+        document.getElementById('snippetList').innerHTML = `<div style="text-align:center; padding: 20px;">読み込みエラーが発生しました</div>`;
       }
     }
 
-    // 画面を開いたときに自動でデータを読み込む
-    loadSnippets();
-  </script>
+    // --- API通信: 保存 ---
+    async function saveSnippet() {
+      const btn = document.getElementById('saveBtn');
+      const title = document.getElementById('titleInput').value;
+      const lang = document.getElementById('langInput').value;
+      const code = document.getElementById('codeInput').value;
 
+      btn.disabled = true;
+      btn.innerHTML = '<span class="material-icons">sync</span> 保存中...';
+
+      try {
+        await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({ title, language: lang, code }),
+          headers: { 'Content-Type': 'application/json' }
+        });
+        showToast("スニペットを保存しました");
+        clearForm();
+        fetchSnippets(); // リスト更新
+      } catch (error) {
+        showToast("保存に失敗しました", true);
+      } finally {
+        btn.innerHTML = '保存';
+        validateForm(); // ボタン状態リセット
+      }
+    }
+
+    // --- API通信: 削除 ---
+    async function deleteSnippet(id) {
+      if (!confirm("このスニペットを削除しますか？\nこの操作は取り消せません。")) return;
+
+      const btn = document.getElementById(`del-${id}`);
+      const originalText = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '削除中...';
+
+      try {
+        await fetch(API_URL, {
+          method: 'DELETE',
+          body: JSON.stringify({ id }),
+          headers: { 'Content-Type': 'application/json' }
+        });
+        showToast("削除しました");
+        fetchSnippets();
+      } catch (error) {
+        showToast("削除に失敗しました", true);
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+      }
+    }
+
+    // --- UI: 描画とフィルタ ---
+    function renderSnippets(data) {
+      const list = document.getElementById('snippetList');
+      if (data.length === 0) {
+        list.innerHTML = `<div class="card" style="text-align:center; color:var(--text-secondary);">まだスニペットがありません。<br>上のフォームから登録してみましょう！</div>`;
+        return;
+      }
+
+      list.innerHTML = data.map(item => `
+        <div class="snippet-item">
+          <div class="snippet-header">
+            <h3 style="margin:0; font-size:var(--font-size-base);">${escapeHTML(item.title)}</h3>
+            <span class="snippet-lang">${escapeHTML(item.language)}</span>
+          </div>
+          <pre class="snippet-code"><code>${escapeHTML(item.code)}</code></pre>
+          <div class="snippet-actions">
+            <button class="btn btn--ghost" onclick="copyCode(this, '${escapeHTML(item.code).replace(/'/g, "\\'")}')">
+              <span class="material-icons" style="font-size:16px;">content_copy</span> コピー
+            </button>
+            <button id="del-${item.id}" class="btn btn--danger" onclick="deleteSnippet('${item.id}')">
+              <span class="material-icons" style="font-size:16px;">delete</span> 削除
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function filterSnippets() {
+      const query = document.getElementById('searchInput').value.toLowerCase();
+      const filtered = snippetsData.filter(item => 
+        item.title.toLowerCase().includes(query) || 
+        item.language.toLowerCase().includes(query)
+      );
+      renderSnippets(filtered);
+    }
+
+    // --- UI: 入力制御 (HIG コンストレイント) ---
+    function validateForm() {
+      const title = document.getElementById('titleInput').value.trim();
+      const lang = document.getElementById('langInput').value;
+      const code = document.getElementById('codeInput').value.trim();
+      document.getElementById('saveBtn').disabled = !(title && lang && code);
+    }
+
+    function clearForm() {
+      document.getElementById('titleInput').value = '';
+      document.getElementById('langInput').value = '';
+      document.getElementById('codeInput').value = '';
+      validateForm();
+    }
+
+    // --- UI: コピー機能 ---
+    function copyCode(btn, text) {
+      navigator.clipboard.writeText(text).then(() => {
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<span class="material-icons" style="font-size:16px;">check</span> コピー完了';
+        btn.style.borderColor = 'var(--color-success)';
+        btn.style.color = 'var(--color-success)';
+        setTimeout(() => {
+          btn.innerHTML = originalHTML;
+          btn.style = '';
+        }, 2000);
+      });
+    }
+
+    // --- UI: トースト通知 ---
+    function showToast(message, isError = false) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.style.backgroundColor = isError ? 'var(--color-danger)' : 'var(--text-primary)';
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    // --- UI: モーダル・テーマ制御 ---
+    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+    function closeOnBackground(e, id) { if (e.target.id === id) closeModal(id); }
+
+    function setTheme(theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+      localStorage.setItem('appTheme', theme);
+      updateThemeButtons(theme);
+    }
+    function updateThemeButtons(activeTheme) {
+      document.querySelectorAll('.theme-btn').forEach(btn => {
+        btn.classList.toggle('selected', btn.textContent.includes(
+          {'light':'ライト','dark':'ダーク','ocean':'オーシャン','forest':'フォレスト','sunset':'サンセット','sakura':'サクラ'}[activeTheme]
+        ));
+      });
+    }
+    function setFont(font) {
+      document.documentElement.style.setProperty('--font-family', font);
+      localStorage.setItem('appFont', font);
+    }
+
+    // --- ツアー機能 (Driver.js) ---
+    function startTour() {
+      const driver = window.driver.js.driver;
+      const tourObj = driver({
+        showProgress: true,
+        allowKeyboardControl: true,
+        doneBtnText: '完了',
+        nextBtnText: '次へ',
+        prevBtnText: '戻る',
+        steps: [
+          { element: '#tour-header', popover: { title: 'スニペット管理へようこそ', description: 'よく使うコードをクラウドに保存できるアプリです。' } },
+          { element: '#tour-form', popover: { title: 'コードの登録', description: '言語とコードを入力して「保存」を押すだけです。' } },
+          { element: '#tour-list', popover: { title: 'コードの活用', description: '保存したコードはここからワンクリックでコピーできます。検索も可能です！' } },
+          { element: '[onclick="openModal(\'settingsModal\')"]', popover: { title: 'デザイン変更', description: 'ここで6種類の色とフォントを自由に変更できます。' } }
+        ]
+      });
+      tourObj.drive();
+    }
+
+    // --- ユーティリティ ---
+    function escapeHTML(str) {
+      return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag]));
+    }
+  </script>
 </body>
 </html>
