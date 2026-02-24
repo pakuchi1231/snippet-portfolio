@@ -71,10 +71,8 @@
     
     .search-bar { margin-bottom: var(--space-4); position: relative; }
     
-    /* === 【重要】横幅はみ出し防止の最強コード === */
     .snippet-list { 
       display: grid; 
-      /* minmax(0, 1fr) によって中身がどんなに長くても枠を突き破らなくなります */
       grid-template-columns: minmax(0, 1fr); 
       gap: var(--space-4); 
       width: 100%;
@@ -85,7 +83,6 @@
       border-radius: var(--radius-md); 
       padding: var(--space-4); 
       transition: var(--transition-fast); 
-      /* 念のための横幅リセット */
       min-width: 0; 
       max-width: 100%;
     }
@@ -93,16 +90,15 @@
     .snippet-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-2); }
     .snippet-lang { background: var(--accent); color: var(--text-inverse); padding: 2px 8px; border-radius: 12px; font-size: var(--font-size-xs); }
     
-    /* === コードブロックの横スクロール設定 === */
     .snippet-code { 
       border-radius: var(--radius-sm); 
       font-size: var(--font-size-sm); 
       border: 1px solid var(--border); 
       margin: 0; 
       padding: 0; 
-      overflow-x: auto; /* はみ出たらスクロール */
+      overflow-x: auto; 
       max-width: 100%;
-      background: #282c34; /* ハイライトテーマの背景色に合わせる */
+      background: #282c34;
     }
     .snippet-code code { 
       padding: var(--space-4); 
@@ -122,7 +118,6 @@
     #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--text-primary); color: var(--bg-base); padding: 12px 24px; border-radius: 30px; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 2000; font-weight: bold; }
     #toast.show { transform: translateX(-50%) translateY(0); }
     
-    /* === スマホ向けレスポンシブ対応 === */
     @media (max-width: 600px) {
       .container { padding: var(--space-2); }
       header { flex-direction: column; gap: var(--space-4); align-items: flex-start; }
@@ -227,7 +222,7 @@
   <div id="toast"></div>
 
   <script>
-    // ▼▼▼ APIのURL（snippets付き） ▼▼▼
+    // ▼▼▼ APIのURL ▼▼▼
     const API_URL = "https://kj77nq93g5.execute-api.ap-northeast-1.amazonaws.com/prod/snippets"; 
     
     let snippetsData = [];
@@ -299,13 +294,17 @@
       }
     }
 
-    function startEdit(id, title, lang, code) {
+    // 【修正】渡されたIDをもとに、保存されている配列(snippetsData)から安全にデータを引き出す
+    function startEdit(id) {
+      const item = snippetsData.find(s => s.id === id);
+      if (!item) return;
+
       editingId = id;
       document.getElementById('formTitle').innerText = "データを編集";
       document.getElementById('formTitle').style.color = "var(--accent)";
-      document.getElementById('titleInput').value = title;
-      document.getElementById('langInput').value = lang;
-      document.getElementById('codeInput').value = code;
+      document.getElementById('titleInput').value = item.title;
+      document.getElementById('langInput').value = item.language;
+      document.getElementById('codeInput').value = item.code;
       
       document.getElementById('saveBtn').innerText = "更新する";
       document.getElementById('cancelBtn').innerText = "編集をキャンセル";
@@ -370,10 +369,10 @@
           </div>
           <pre class="snippet-code"><code class="language-${escapeHTML(item.language)}">${escapeHTML(item.code)}</code></pre>
           <div class="snippet-actions">
-            <button class="btn btn--ghost" onclick="copyCode(this, '${escapeHTML(item.code).replace(/'/g, "\\'")}')">
+            <button class="btn btn--ghost" onclick="copyCode(this, '${item.id}')">
               <span class="material-icons" style="font-size:16px;">content_copy</span> コピー
             </button>
-            <button class="btn btn--ghost" onclick="startEdit('${item.id}', '${escapeHTML(item.title)}', '${escapeHTML(item.language)}', '${escapeHTML(item.code).replace(/'/g, "\\'")}')">
+            <button class="btn btn--ghost" onclick="startEdit('${item.id}')">
               <span class="material-icons" style="font-size:16px;">edit</span> 編集
             </button>
             <button id="del-${item.id}" class="btn btn--danger" onclick="deleteSnippet('${item.id}')">
@@ -404,8 +403,12 @@
       document.getElementById('saveBtn').disabled = !(title && lang && code);
     }
 
-    function copyCode(btn, text) {
-      navigator.clipboard.writeText(text).then(() => {
+    // 【修正】IDをもとにデータを引っ張ってコピーする
+    function copyCode(btn, id) {
+      const item = snippetsData.find(s => s.id === id);
+      if (!item) return;
+
+      navigator.clipboard.writeText(item.code).then(() => {
         const originalHTML = btn.innerHTML;
         btn.innerHTML = '<span class="material-icons" style="font-size:16px;">check</span> 完了';
         btn.style.borderColor = 'var(--color-success)';
