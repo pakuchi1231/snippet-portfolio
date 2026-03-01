@@ -83,25 +83,25 @@ graph TD
 
     %% バックエンドAPIと認証
     subgraph "Backend API"
-        CF -->|APIリクエスト| APIGW[API Gateway <br> (スロットリング制限)]
+        CF -->|APIリクエスト| APIGW["API Gateway <br> (スロットリング制限)"]
         Cognito[Amazon Cognito] -.->|認証トークン検証| APIGW
         APIGW -->|ルーティング| Lambda[AWS Lambda]
     end
 
     %% データベース
     subgraph "Data Layer"
-        Lambda -->|ページネーション / 検索| DDB[(Amazon DynamoDB<br>オンデマンド)]
+        Lambda -->|ページネーション / 検索| DDB[("Amazon DynamoDB<br>オンデマンド")]
         DDB -.->|検索用インデックス| GSI((GSI))
         DDB -.->|バックアップ| PITR((PITR: 自動復元))
     end
 
     %% 運用保守・監視・デプロイ
     subgraph "Observability / CI・CD"
-        Lambda -.->|ログ・トレース| CW[CloudWatch / AWS X-Ray]
-        CW -.->|エラー検知・通知| SNS[SNS / Chatbot]
+        Lambda -.->|ログ・トレース| CW["CloudWatch / AWS X-Ray"]
+        CW -.->|エラー検知・通知| SNS["SNS / Chatbot"]
         SNS -.->|アラート| Slack((Slack))
         
-        GitHub[GitHub Actions] -->|1. cdk deploy| CFN[AWS CloudFormation]
+        GitHub["GitHub Actions"] -->|1. cdk deploy| CFN[AWS CloudFormation]
         CFN -.->|インフラ構築| Lambda
         
         GitHub -->|2. S3 Sync & Invalidate| S3
