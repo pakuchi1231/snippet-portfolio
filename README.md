@@ -71,9 +71,10 @@ graph LR
 
 ```mermaid
 graph TD
-    %% ユーザーからのアクセス
-    User((ユーザー)) -->|HTTPS| CF[Amazon CloudFront]
-    WAF[AWS WAF] -.->|脆弱性・DDoS防御| CF
+    %% DNS & アクセス
+    DNS[Amazon Route 53] -.->|名前解決| CF[Amazon CloudFront]
+    User((ユーザー)) -->|HTTPS / ACM| CF
+    WAF[AWS WAF] -.->|Web ACL アタッチ| CF
 
     %% フロントエンド配信
     subgraph "Frontend / Edge"
@@ -82,33 +83,38 @@ graph TD
 
     %% バックエンドAPIと認証
     subgraph "Backend API"
-        CF -->|APIリクエスト| APIGW[API Gateway]
+        CF -->|APIリクエスト| APIGW[API Gateway <br> (スロットリング制限)]
         Cognito[Amazon Cognito] -.->|認証トークン検証| APIGW
         APIGW -->|ルーティング| Lambda[AWS Lambda]
     end
 
-    %% データベースとキャッシュ
+    %% データベース
     subgraph "Data Layer"
-        Lambda -->|Read キャッシュ| DAX[Amazon DAX]
-        DAX -->|キャッシュミス/Write| DDB[(Amazon DynamoDB)]
+        Lambda -->|ページネーション / 検索| DDB[(Amazon DynamoDB<br>オンデマンド)]
+        DDB -.->|検索用インデックス| GSI((GSI))
         DDB -.->|バックアップ| PITR((PITR: 自動復元))
     end
 
-    %% 運用保守・監視
+    %% 運用保守・監視・デプロイ
     subgraph "Observability / CI・CD"
         Lambda -.->|ログ・トレース| CW[CloudWatch / AWS X-Ray]
         CW -.->|エラー検知・通知| SNS[SNS / Chatbot]
         SNS -.->|アラート| Slack((Slack))
-        GitHub[GitHub Actions] -.->|自動デプロイ| S3
-        GitHub -.->|IaCデプロイ| Lambda
+        
+        GitHub[GitHub Actions] -->|1. cdk deploy| CFN[AWS CloudFormation]
+        CFN -.->|インフラ構築| Lambda
+        
+        GitHub -->|2. S3 Sync & Invalidate| S3
+        GitHub -.->|キャッシュクリア| CF
     end
 
     %% スタイリング
     style WAF fill:#f9f2e7,stroke:#d18c35,stroke-width:2px
     style Cognito fill:#f9f2e7,stroke:#d18c35,stroke-width:2px
-    style DAX fill:#e6f0fa,stroke:#2b6cb0,stroke-width:2px
+    style CFN fill:#e6f0fa,stroke:#2b6cb0,stroke-width:2px
     style CW fill:#f9eef2,stroke:#c53030,stroke-width:2px
     style GitHub fill:#eeeeee,stroke:#333333,stroke-width:2px
+    style DNS fill:#f9f2e7,stroke:#d18c35,stroke-width:2px
 ```
 
 ### 💡 スケールアップを見据えた設計思想
